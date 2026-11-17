@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Python Cache & Bytecode
+__pycache__/
+backend/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+backend/.pytest_cache/
+
+# Production Build Artifacts
+dist/
+frontend/dist/
+dist-ssr/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+
+# Archives
+*.zip
+Search_Engine_Project.zip
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

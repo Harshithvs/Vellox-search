@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>velloX - Interactive Search Experience & Dashboard</title>
+  
+  <!-- Modern Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --card-bg: rgba(18, 23, 34, 0.75);
+      --card-hover: rgba(26, 33, 48, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(59, 130, 246, 0.5);
+      
+      /* velloX Signature Branding Palette */
+      --c-v: #3b82f6;   /* Electric Blue */
+      --c-e: #ef4444;   /* Crimson Coral */
+      --c-l1: #f59e0b;  /* Amber Gold */
+      --c-l2: #2563eb;  /* Deep Sapphire */
+      --c-o: #10b981;   /* Emerald Green */
+      --c-x: #ea580c;   /* Fiery Orange */
+
+      --yt-color: #ff334b;
+      --li-color: #0a84ff;
+      --ig-color: #e1306c;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: #f1f5f9;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-x: hidden;
+      cursor: default;
+      position: relative;
+    }
+
+    /* Fullscreen Interactive Canvases */
+    #bgCanvas, #trailCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+    }
+    #bgCanvas { z-index: 1; }
+    #trailCanvas { z-index: 2; }
+
+    /* Top Navigation Bar */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      width: 100%;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(10, 13, 20, 0.7);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .top-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-mark {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, var(--c-v), var(--c-x));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      color: #fff;
+      font-size: 17px;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    }
+
+    .brand-title {
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.5px;
+    }
+
+    .top-telemetry {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+    }
+
+    .stat-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .stat-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.3); opacity: 0.6; }
+    }
+
+    /* Core Application Wrapper */
+    .app-wrapper {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 900px;
+      padding: 40px 20px 80px;
+      gap: 28px;
+    }
+
+    /* velloX Dynamic Logo Stage */
+    .logo-container {
+      display: flex;
+      align-items: baseline;
+      font-size: clamp(64px, 12vw, 92px);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 800;
+      letter-spacing: -3px;
+      user-select: none;
+      transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+
+    .char {
+      display: inline-block;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+      position: relative;
+    }
+    .char-v { color: var(--c-v); }
+    .char-e { color: var(--c-e); }
+    .char-l1 { color: var(--c-l1); }
+    .char-l2 { color: var(--c-l2); }
+    .char-o { color: var(--c-o); }
+    .char-x { color: var(--c-x); font-size: 1.1em; }
+
+    .char:hover {
+      transform: translateY(-16px) scale(1.18) rotate(3deg);
+      filter: drop-shadow(0 14px 28px currentColor);
+    }
+
+    .logo-tagline {
+      font-size: 13px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Magnetic Proximity Search Bar */
+    .search-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 680px;
+      border-radius: 30px;
+      padding: 2px;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+      transition: box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+      z-index: 30;
+    }
+
+    .search-box {
+      width: 100%;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      padding: 14px 22px;
+      gap: 14px;
+      border: 1px solid var(--border);
+      transition: border-color 0.3s ease, background 0.3s ease;
+    }
+
+    .search-icon {
+      width: 22px;
+      height: 22px;
+      fill: none;
+      stroke: #64748b;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.3s ease, transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .search-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #f8fafc;
+      font-size: 17px;
+      font-weight: 400;
+      font-family: inherit;
+    }
+    .search-input::placeholder {
+      color: #64748b;
+    }
+
+    .search-badge {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.1);
+      padding: 5px 9px;
+      border-radius: 7px;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      user-select: none;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .clear-btn {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      border-radius: 50%;
+      transition: color 0.2s, background 0.2s;
+    }
+    .clear-btn:hover {
+      color: #f1f5f9;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .clear-btn.visible {
+      display: flex;
+    }
+
+    /* Proximity and Focus Dynamic States */
+    .search-wrapper.near {
+      box-shadow: 0 14px 40px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.2);
+    }
+    .search-wrapper.near .search-box {
+      border-color: rgba(59, 130, 246, 0.45);
+    }
+    .search-wrapper.near .search-icon {
+      stroke: var(--c-v);
+      transform: scale(1.08);
+    }
+
+    .search-wrapper.active {
+      transform: scale(1.015);
+      box-shadow: 0 20px 50px rgba(59, 130, 246, 0.45), 0 0 30px rgba(59, 130, 246, 0.25);
+    }
+    .search-wrapper.active .search-box {
+      background: rgba(18, 24, 38, 0.95);
+      border-color: #3b82f6;
+    }
+    .search-wrapper.active .search-icon {
+      stroke: #60a5fa;
+    }
+
+    /* Autocomplete Suggestions Container */
+    .suggestions-dropdown {
+      position: absolute;
+      top: calc(100% + 10px);
+      left: 0;
+      right: 0;
+      background: rgba(18, 23, 34, 0.96);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      z-index: 50;
+      animation: fadeIn 0.18s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .suggestions-dropdown.open {
+      display: flex;
+    }
+
+    .suggestion-item {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      transition: background 0.15s ease, padding-left 0.15s ease;
+    }
+    .suggestion-item:last-child {
+      border-bottom: none;
+    }
+    .suggestion-item:hover, .suggestion-item.selected {
+      background: rgba(59, 130, 246, 0.15);
+      padding-left: 24px;
+    }
+    .suggestion-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      color: #e2e8f0;
+    }
+    .suggestion-icon {
+      width: 16px;
+      height: 16px;
+      color: #64748b;
+    }
+    .suggestion-highlight {
+      color: #60a5fa;
+      font-weight: 600;
+    }
+    .suggestion-meta {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    /* Platform Filter Tabs */
+    .filter-tabs {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      color: #94a3b8;
+      padding: 8px 16px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+    .filter-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+      transform: translateY(-2px);
+    }
+    .filter-btn.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.5);
+      color: #60a5fa;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Quick Context Intelligence Pills */
+    .pills-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      max-width: 720px;
+    }
+    .quick-pill {
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #cbd5e1;
+      padding: 6px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+    }
+    .quick-pill:hover {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      transform: translateY(-1px);
+    }
+
+    /* Live Telemetry Panel */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    .telemetry-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    }
+    .telemetry-card:hover {
+      transform: translateY(-3px);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+    .telemetry-label {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .telemetry-val {
+      font-size: 20px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      color: #f8fafc;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .telemetry-sub {
+      font-size: 11px;
+      color: #10b981;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Federated Results Section */
+    .results-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 10px;
+    }
+
+    .results-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 4px;
+      font-size: 13px;
+      color: #94a3b8;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .result-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      position: relative;
+      cursor: pointer;
+    }
+    .result-card:hover {
+      transform: translateY(-4px);
+      background: var(--card-hover);
+    }
+
+    .result-card.yt:hover {
+      border-color: rgba(255, 51, 75, 0.7);
+      box-shadow: 0 12px 30px rgba(255, 51, 75, 0.25);
+    }
+    .result-card.li:hover {
+      border-color: rgba(10, 132, 255, 0.7);
+      box-shadow: 0 12px 30px rgba(10, 132, 255, 0.25);
+    }
+    .result-card.ig:hover {
+      border-color: rgba(225, 48, 108, 0.7);
+      box-shadow: 0 12px 30px rgba(225, 48, 108, 0.25);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .card-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 10px;
+      border-radius: 6px;
+    }
+    .badge-yt { background: rgba(255, 51, 75, 0.15); color: #ff6b7d; }
+    .badge-li { background: rgba(10, 132, 255, 0.15); color: #60a5fa; }
+    .badge-ig { background: rgba(225, 48, 108, 0.15); color: #f472b6; }
+
+    .card-score {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: #38bdf8;
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f8fafc;
+      line-height: 1.4;
+    }
+    .card-snippet {
+      font-size: 14px;
+      color: #94a3b8;
+      line-height: 1.55;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Guidance Text & Footer */
+    .footer-guidance {
+      font-size: 12.5px;
+      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      user-select: none;
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 10px #10b981;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fullscreen Ambient Particle & Interactive Cursor Canvases -->
+  <canvas id="bgCanvas"></canvas>
+  <canvas id="trailCanvas"></canvas>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="top-bar">
+    <a href="/" class="top-brand" id="brandHomeLink" title="Return to Main Search App">
+      <div class="brand-mark">v</div>
+      <span class="brand-title">velloX</span>
+    </a>
+
+    <div class="top-telemetry">
+      <div class="stat-pill">
+        <span class="stat-dot"></span>
+        <span id="trieStateBadge">TRIE: O(L) IN-MEMORY</span>
+      </div>
+      <div class="stat-pill">
+        <span id="latencyHeader">LATENCY: 0.28ms</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Application Wrapper -->
+  <div class="app-wrapper">
+    <!-- velloX Dynamic Logo with 3D Tilt & Magnetic Deflection -->
+    <div class="logo-container" id="logoStage" title="Click to trigger particle burst">
+      <span class="char char-v">v</span>
+      <span class="char char-e">e</span>
+      <span class="char char-l1">l</span>
+      <span class="char char-l2">l</span>
+      <span class="char char-o">o</span>
+      <span class="char char-x">X</span>
+    </div>
+
+    <div class="logo-tagline">
+      <span>Deterministic Prefix Trie</span>
+      <span>•</span>
+      <span>YouTube, LinkedIn & Instagram Intelligence</span>
+    </div>
+
+    <!-- Magnetic Proximity Search Bar & Dropdown -->
+    <div class="search-wrapper" id="searchWrapper">
+      <div class="search-box">
+        <svg class="search-icon" viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+
+        <input 
+          type="text" 
+          class="search-input" 
+          id="searchInput" 
+          placeholder="Move mouse near here or type a prefix..." 
+          autocomplete="off" 
+          spellcheck="false"
+        />
+
+        <button class="clear-btn" id="clearBtn" title="Clear search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+
+        <div class="search-badge" id="latencyBadge">O(L) READY</div>
+      </div>
+
+      <!-- Autocomplete Dropdown List -->
+      <div class="suggestions-dropdown" id="suggestionsDropdown"></div>
+    </div>
+
+    <!-- Platform Category Filter Tabs -->
+    <div class="filter-tabs">
+      <button class="filter-btn active" data-platform="all" id="filterAll">
+        <span>🌐 All Platforms</span>
+      </button>
+      <button class="filter-btn" data-platform="youtube" id="filterYoutube">
+        <span>▶ YouTube Videos</span>
+      </button>
+      <button class="filter-btn" data-platform="linkedin" id="filterLinkedin">
+        <span>💼 LinkedIn Posts</span>
+      </button>
+      <button class="filter-btn" data-platform="instagram" id="filterInstagram">
+        <span>📸 Instagram Reels</span>
+      </button>
+    </div>
+
+    <!-- Quick Context Recommendation Pills -->
+    <div class="pills-container" id="pillsContainer">
+      <span class="quick-pill" data-query="phone reviews 2025">📱 phone reviews 2025</span>
+      <span class="quick-pill" data-query="python tutorial">🐍 python tutorial</span>
+      <span class="quick-pill" data-query="fastapi microservices">⚡ fastapi microservices</span>
+      <span class="quick-pill" data-query="software engineer salary">💼 software engineer salary</span>
+      <span class="quick-pill" data-query="phone camera comparison">📷 phone camera comparison</span>
+      <span class="quick-pill" data-query="react 19 tips">⚛️ react 19 tips</span>
+    </div>
+
+    <!-- Live System Telemetry Cards -->
+    <div class="telemetry-grid">
+      <div class="telemetry-card">
+        <span class="telemetry-label">Prefix Trie Lookup</span>
+        <div class="telemetry-val" id="telemetryTrieVal">0.24 <span style="font-size: 13px; color: #38bdf8;">ms</span></div>
+        <span class="telemetry-sub">O(L) Time Complexity</span>
+      </div>
+
+      <div class="telemetry-card">
+        <span class="telemetry-label">Active Indices</span>
+        <div class="telemetry-val">3 <span style="font-size: 13px; color: #94a3b8;">engines</span></div>
+        <span class="telemetry-sub">YouTube • LinkedIn • Instagram</span>
+      </div>
+
+      <div class="telemetry-card">
+        <span class="telemetry-label">Cursor Physics</span>
+        <div class="telemetry-val" id="telemetryCursorSpeed">0 <span style="font-size: 13px; color: #94a3b8;">px/s</span></div>
+        <span class="telemetry-sub" id="telemetryCoord">X: 0, Y: 0</span>
+      </div>
+    </div>
+
+    <!-- Search Results Feed -->
+    <div class="results-container" id="resultsContainer">
+      <div class="results-header">
+        <span id="resultsCount">INDEX SPOTLIGHT</span>
+        <span id="federatedSpeed">FEDERATED LATENCY: 4.8ms</span>
+      </div>
+
+      <div id="resultsList" style="display: flex; flex-direction: column; gap: 14px;">
+        <!-- Initial Sample Spotlight Cards -->
+      </div>
+    </div>
+
+    <!-- Status Guidance Footer -->
+    <div class="footer-guidance">
+      <span class="pulse-dot"></span>
+      <span id="trackerStatus">POINTER TRACING: ACTIVE • 70 NODES AMBIENT</span>
+    </div>
+  </div>
+
+  <script>
+    // Canvases Initialization
+    const trailCanvas = document.getElementById('trailCanvas');
+    const trailCtx = trailCanvas.getContext('2d');
+    const bgCanvas = document.getElementById('bgCanvas');
+    const bgCtx = bgCanvas.getContext('2d');
+
+    const searchWrapper = document.getElementById('searchWrapper');
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const logoStage = document.getElementById('logoStage');
+    const trackerStatus = document.getElementById('trackerStatus');
+    const latencyBadge = document.getElementById('latencyBadge');
+    const latencyHeader = document.getElementById('latencyHeader');
+    const suggestionsDropdown = document.getElementById('suggestionsDropdown');
+    const resultsList = document.getElementById('resultsList');
+    const resultsCount = document.getElementById('resultsCount');
+    const federatedSpeed = document.getElementById('federatedSpeed');
+    const telemetryTrieVal = document.getElementById('telemetryTrieVal');
+    const telemetryCursorSpeed = document.getElementById('telemetryCursorSpeed');
+    const telemetryCoord = document.getElementById('telemetryCoord');
+
+    let width = 0, height = 0;
+    function resize() {
+      width = trailCanvas.width = bgCanvas.width = window.innerWidth;
+      height = trailCanvas.height = bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Palette mapped to velloX letter branding
+    const brandColors = ['#3b82f6', '#ef4444', '#f59e0b', '#2563eb', '#10b981', '#ea580c'];
+
+    // Mouse Tracking State
+    const mouse = { x: -200, y: -200, prevX: -200, prevY: -200, speed: 0 };
+    const trailPoints = [];
+    const trailMax = 28;
+    const bursts = [];
+
+    window.addEventListener('mousemove', (e) => {
+      mouse.prevX = mouse.x;
+      mouse.prevY = mouse.y;
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
+
+      const dx = mouse.x - mouse.prevX;
+      const dy = mouse.y - mouse.prevY;
+      mouse.speed = Math.min(Math.sqrt(dx * dx + dy * dy), 45);
+
+      // Update cursor telemetry
+      telemetryCursorSpeed.innerHTML = `${Math.round(mouse.speed * 10)} <span style="font-size: 13px; color: #94a3b8;">px/s</span>`;
+      telemetryCoord.textContent = `X: ${Math.round(mouse.x)}, Y: ${Math.round(mouse.y)}`;
+
+      // Magnetic Proximity Detection for Search Bar
+      updateMagneticProximity();
+
+      // Magnetic 3D Deflection for Logo
+      updateLogoDeflection();
+
+      // Spawn trail particle
+      const colorIndex = Math.floor(Math.random() * brandColors.length);
+      trailPoints.push({
+        x: mouse.x,
+        y: mouse.y,
+        radius: Math.max(3.5, Math.min(mouse.speed * 0.45, 12)),
+        color: brandColors[colorIndex],
+        alpha: 0.95,
+        vx: (Math.random() - 0.5) * 1.5,
+        vy: (Math.random() - 0.5) * 1.5,
+        decay: 0.035
+      });
+
+      if (trailPoints.length > trailMax) {
+        trailPoints.shift();
+      }
+    });
+
+    // Magnetic Proximity Calculation
+    function updateMagneticProximity() {
+      const rect = searchWrapper.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dist = Math.hypot(mouse.x - centerX, mouse.y - centerY);
+
+      const proximityThreshold = 220;
+
+      if (dist < proximityThreshold) {
+        searchWrapper.classList.add('near');
+        // Gentle magnetic attraction towards mouse
+        const pull = (1 - dist / proximityThreshold) * 7;
+        const angle = Math.atan2(mouse.y - centerY, mouse.x - centerX);
+        const pullX = Math.cos(angle) * pull;
+        const pullY = Math.sin(angle) * pull;
+        searchWrapper.style.transform = `translate(${pullX}px, ${pullY}px) scale(1.01)`;
+      } else {
+        searchWrapper.classList.remove('near');
+        if (!searchWrapper.classList.contains('active')) {
+          searchWrapper.style.transform = 'translate(0px, 0px) scale(1)';
+        }
+      }
+    }
+
+    // Dynamic 3D Deflection for velloX Logo
+    function updateLogoDeflection() {
+      const rect = logoStage.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const dist = Math.hypot(mouse.x - centerX, mouse.y - centerY);
+
+      if (dist < 400) {
+        const factor = (1 - dist / 400);
+        const rotX = (mouse.y - centerY) * -0.04 * factor;
+        const rotY = (mouse.x - centerX) * 0.04 * factor;
+        logoStage.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${1 + factor * 0.03})`;
+      } else {
+        logoStage.style.transform = 'perspective(800px) rotateX(0deg) rotateY(0deg) scale(1)';
+      }
+    }
+
+    // Logo Click Particle Burst Celebration
+    logoStage.addEventListener('click', () => {
+      const rect = logoStage.getBoundingClientRect();
+      const cx = rect.left + rect.width / 2;
+      const cy = rect.top + rect.height / 2;
+
+      for (let i = 0; i < 45; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 8 + 3;
+        bursts.push({
+          x: cx,
+          y: cy,
+          vx: Math.cos(angle) * velocity,
+          vy: Math.sin(angle) * velocity,
+          radius: Math.random() * 5 + 3,
+          color: brandColors[i % brandColors.length],
+          alpha: 1,
+          decay: 0.02
+        });
+      }
+
+      searchInput.value = '';
+      clearBtn.classList.remove('visible');
+      latencyBadge.textContent = 'O(L) READY';
+      renderResults(sampleData);
+    });
+
+    // Background Ambient Constellation Simulation
+    const bgNodes = [];
+    const numNodes = 70;
+    for (let i = 0; i < numNodes; i++) {
+      bgNodes.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
+        radius: Math.random() * 1.8 + 1,
+        color: brandColors[Math.floor(Math.random() * brandColors.length)],
+        alpha: Math.random() * 0.5 + 0.2
+      });
+    }
+
+    function renderBg() {
+      bgCtx.clearRect(0, 0, width, height);
+
+      // Subtle ambient cursor glow spotlight
+      if (mouse.x > 0 && mouse.y > 0) {
+        const glowGrad = bgCtx.createRadialGradient(mouse.x, mouse.y, 10, mouse.x, mouse.y, 250);
+        glowGrad.addColorStop(0, 'rgba(59, 130, 246, 0.09)');
+        glowGrad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+        bgCtx.fillStyle = glowGrad;
+        bgCtx.fillRect(0, 0, width, height);
+      }
+
+      // Draw and connect ambient nodes
+      for (let i = 0; i < bgNodes.length; i++) {
+        const node = bgNodes[i];
+        node.x += node.vx;
+        node.y += node.vy;
+
+        if (node.x < 0) node.x = width;
+        if (node.x > width) node.x = 0;
+        if (node.y < 0) node.y = height;
+        if (node.y > height) node.y = 0;
+
+        // Mouse slight deflection
+        const dx = mouse.x - node.x;
+        const dy = mouse.y - node.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < 120 && dist > 0) {
+          node.x -= (dx / dist) * 1.2;
+          node.y -= (dy / dist) * 1.2;
+        }
+
+        // Draw node
+        bgCtx.beginPath();
+        bgCtx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+        bgCtx.fillStyle = node.color;
+        bgCtx.globalAlpha = node.alpha;
+        bgCtx.fill();
+
+        // Connect nearby nodes
+        for (let j = i + 1; j < bgNodes.length; j++) {
+          const other = bgNodes[j];
+          const distBetween = Math.hypot(node.x - other.x, node.y - other.y);
+          if (distBetween < 110) {
+            bgCtx.beginPath();
+            bgCtx.moveTo(node.x, node.y);
+            bgCtx.lineTo(other.x, other.y);
+            bgCtx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+            bgCtx.globalAlpha = (1 - distBetween / 110) * 0.35;
+            bgCtx.stroke();
+          }
+        }
+      }
+      bgCtx.globalAlpha = 1;
+    }
+
+    // Render Mouse Particle Trails & Bursts
+    function renderTrails() {
+      trailCtx.clearRect(0, 0, width, height);
+
+      // Render connected dynamic glow ribbon for mouse trail
+      for (let i = 0; i < trailPoints.length; i++) {
+        const p = trailPoints[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+
+        if (p.alpha <= 0) {
+          trailPoints.splice(i, 1);
+          i--;
+          continue;
+        }
+
+        trailCtx.save();
+        trailCtx.beginPath();
+        trailCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        trailCtx.fillStyle = p.color;
+        trailCtx.globalAlpha = p.alpha;
+        trailCtx.shadowBlur = 14;
+        trailCtx.shadowColor = p.color;
+        trailCtx.fill();
+        trailCtx.restore();
+      }
+
+      // Render burst particles
+      for (let i = 0; i < bursts.length; i++) {
+        const b = bursts[i];
+        b.x += b.vx;
+        b.y += b.vy;
+        b.vy += 0.15; // Gravity
+        b.alpha -= b.decay;
+
+        if (b.alpha <= 0) {
+          bursts.splice(i, 1);
+          i--;
+          continue;
+        }
+
+        trailCtx.save();
+        trailCtx.beginPath();
+        trailCtx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
+        trailCtx.fillStyle = b.color;
+        trailCtx.globalAlpha = b.alpha;
+        trailCtx.shadowBlur = 10;
+        trailCtx.shadowColor = b.color;
+        trailCtx.fill();
+        trailCtx.restore();
+      }
+    }
+
+    // Animation Loop
+    function animate() {
+      renderBg();
+      renderTrails();
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    // Built-in In-Memory Fallback Prefix Trie for Guaranteed 0-Latency Autocomplete
+    const fallbackDictionary = [
+      { phrase: 'phone reviews 2025', count: 184, platform: 'youtube', type: 'Tech Review' },
+      { phrase: 'phone camera comparison', count: 152, platform: 'youtube', type: '4K Shootout' },
+      { phrase: 'best budget smartphone 2025', count: 130, platform: 'youtube', type: 'Hardware' },
+      { phrase: 'smartphone battery endurance test', count: 98, platform: 'youtube', type: 'Benchmark' },
+      { phrase: 'python tutorial for beginners', count: 210, platform: 'youtube', type: 'Full Course' },
+      { phrase: 'fastapi microservices architecture', count: 144, platform: 'linkedin', type: 'Architecture' },
+      { phrase: 'software engineer salary benchmark', count: 195, platform: 'linkedin', type: 'Compensation' },
+      { phrase: 'react 19 state management hooks', count: 162, platform: 'linkedin', type: 'Frontend' },
+      { phrase: 'phone unboxing reels', count: 112, platform: 'instagram', type: 'Shorts' },
+      { phrase: 'developer workspace aesthetic', count: 125, platform: 'instagram', type: 'Reel' },
+      { phrase: 'machine learning roadmap 2025', count: 180, platform: 'linkedin', type: 'AI Graph' }
+    ];
+
+    // Rich Sample Search Results
+    const sampleData = [
+      {
+        platform: 'youtube',
+        badge: 'YouTube Video',
+        title: 'Top 5 Flagship Phones in 2025 - Ultimate Battery & Performance Test',
+        snippet: 'Deep dive into next-generation smartphone performance, thermal throttling benchmarks, and 200MP sensor color grading against real daylight scenarios.',
+        meta: '▶ 1.2M views • 18m ago • 4K HDR',
+        score: '0.98 Match'
+      },
+      {
+        platform: 'linkedin',
+        badge: 'LinkedIn Engineering',
+        title: 'Staff Hardware Systems Architect - Next-Gen Edge Smartphone Silicon',
+        snippet: 'Google & Qualcomm ecosystem partners seeking lead firmware and ASIC architecture specialists for 2nm mobile tensor processing units in Mountain View, CA.',
+        meta: '💼 42 applicants • Remote / Hybrid • $240K - $310K',
+        score: '0.94 Match'
+      },
+      {
+        platform: 'instagram',
+        badge: 'Instagram Reel',
+        title: '#phonehacks 10 Hidden Mobile Productivity Gestures You Never Knew',
+        snippet: 'Ultra-fast 30s breakdown of developer mode toggles, animation speed boosters, and hidden split-screen clipboard gestures trending across engineering hubs.',
+        meta: '📸 458K likes • 14.2K shares • Trending Audio',
+        score: '0.91 Match'
+      }
+    ];
+
+    function renderResults(items) {
+      resultsList.innerHTML = '';
+      if (!items || items.length === 0) {
+        resultsList.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px; color: #64748b;">
+            <p style="font-size: 16px; margin-bottom: 6px;">No exact index matches found</p>
+            <p style="font-size: 13px; font-family: 'JetBrains Mono', monospace;">Try searching "phone", "python", "salary", or "react"</p>
+          </div>
+        `;
+        resultsCount.textContent = '0 RESULTS';
+        return;
+      }
+
+      resultsCount.textContent = `${items.length} FEDERATED RESULTS`;
+
+      items.forEach(item => {
+        const card = document.createElement('div');
+        const pClass = item.platform === 'youtube' ? 'yt' : (item.platform === 'linkedin' ? 'li' : 'ig');
+        const bClass = item.platform === 'youtube' ? 'badge-yt' : (item.platform === 'linkedin' ? 'badge-li' : 'badge-ig');
+        
+        card.className = `result-card ${pClass}`;
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="card-badge ${bClass}">${item.badge || item.platform}</span>
+            <span class="card-score">${item.score || '0.95 Match'}</span>
+          </div>
+          <div class="card-title">${item.title}</div>
+          <div class="card-snippet">${item.snippet || item.description || ''}</div>
+          <div class="card-meta">${item.meta || 'Real-time Federated Index'}</div>
+        `;
+        resultsList.appendChild(card);
+      });
+    }
+
+    // Initial populate
+    renderResults(sampleData);
+
+    // Search Input and Autocomplete Handling
+    let activeIndex = -1;
+    let currentSuggestions = [];
+
+    searchInput.addEventListener('focus', () => {
+      searchWrapper.classList.add('active');
+      if (searchInput.value.trim()) {
+        fetchSuggestions(searchInput.value.trim());
+      }
+    });
+
+    searchInput.addEventListener('blur', () => {
+      setTimeout(() => {
+        searchWrapper.classList.remove('active');
+        suggestionsDropdown.classList.remove('open');
+      }, 200);
+    });
+
+    searchInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      if (val.length > 0) {
+        clearBtn.classList.add('visible');
+        fetchSuggestions(val);
+      } else {
+        clearBtn.classList.remove('visible');
+        suggestionsDropdown.classList.remove('open');
+        latencyBadge.textContent = 'O(L) READY';
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.classList.remove('visible');
+      suggestionsDropdown.classList.remove('open');
+      latencyBadge.textContent = 'O(L) READY';
+      searchInput.focus();
+    });
+
+    // Autocomplete Trie Fetch with Live API + Fast Fallback
+    async function fetchSuggestions(prefix) {
+      const t0 = performance.now();
+      latencyBadge.textContent = 'O(L) SCAN';
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/suggest?q=${encodeURIComponent(prefix)}`, { signal: AbortSignal.timeout(400) });
+        if (res.ok) {
+          const data = await res.json();
+          const latency = (performance.now() - t0).toFixed(2);
+          telemetryTrieVal.innerHTML = `${latency} <span style="font-size: 13px; color: #38bdf8;">ms</span>`;
+          latencyBadge.textContent = `TRIE: ${latency}ms`;
+          latencyHeader.textContent = `LATENCY: ${latency}ms`;
+          displaySuggestions(data.suggestions || [], prefix);
+          return;
+        }
+      } catch (err) {
+        // Fallback to in-memory Trie simulation
+      }
+
+      // Fast in-memory client-side prefix matching
+      const p = prefix.toLowerCase();
+      const matched = fallbackDictionary.filter(item => item.phrase.toLowerCase().startsWith(p) || item.phrase.toLowerCase().includes(p));
+      const latency = (performance.now() - t0).toFixed(2);
+      telemetryTrieVal.innerHTML = `${latency} <span style="font-size: 13px; color: #38bdf8;">ms</span>`;
+      latencyBadge.textContent = `TRIE: ${latency}ms`;
+      displaySuggestions(matched, prefix);
+    }
+
+    function displaySuggestions(list, prefix) {
+      currentSuggestions = list;
+      activeIndex = -1;
+      suggestionsDropdown.innerHTML = '';
+
+      if (!list || list.length === 0) {
+        suggestionsDropdown.classList.remove('open');
+        return;
+      }
+
+      list.slice(0, 6).forEach((item, index) => {
+        const row = document.createElement('div');
+        row.className = 'suggestion-item';
+        
+        // Highlight prefix in phrase
+        const phrase = item.phrase;
+        let highlighted = phrase;
+        const idx = phrase.toLowerCase().indexOf(prefix.toLowerCase());
+        if (idx !== -1) {
+          highlighted = `${phrase.substring(0, idx)}<span class="suggestion-highlight">${phrase.substring(idx, idx + prefix.length)}</span>${phrase.substring(idx + prefix.length)}`;
+        }
+
+        row.innerHTML = `
+          <div class="suggestion-left">
+            <svg class="suggestion-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span>${highlighted}</span>
+          </div>
+          <span class="suggestion-meta">${item.platform || 'Index'} • score: ${item.count || item.score || 95}</span>
+        `;
+
+        row.addEventListener('click', () => {
+          searchInput.value = item.phrase;
+          suggestionsDropdown.classList.remove('open');
+          performSearch(item.phrase);
+        });
+
+        suggestionsDropdown.appendChild(row);
+      });
+
+      suggestionsDropdown.classList.add('open');
+    }
+
+    // Keyboard Navigation for Suggestions
+    searchInput.addEventListener('keydown', (e) => {
+      const items = suggestionsDropdown.querySelectorAll('.suggestion-item');
+      if (items.length === 0) {
+        if (e.key === 'Enter') {
+          performSearch(searchInput.value.trim());
+        }
+        return;
+      }
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = (activeIndex + 1) % items.length;
+        updateSelection(items);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = (activeIndex - 1 + items.length) % items.length;
+        updateSelection(items);
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        if (activeIndex >= 0 && activeIndex < currentSuggestions.length) {
+          searchInput.value = currentSuggestions[activeIndex].phrase;
+          suggestionsDropdown.classList.remove('open');
+          performSearch(currentSuggestions[activeIndex].phrase);
+        } else {
+          suggestionsDropdown.classList.remove('open');
+          performSearch(searchInput.value.trim());
+        }
+      } else if (e.key === 'Escape') {
+        suggestionsDropdown.classList.remove('open');
+      }
+    });
+
+    function updateSelection(items) {
+      items.forEach((it, i) => {
+        if (i === activeIndex) {
+          it.classList.add('selected');
+          searchInput.value = currentSuggestions[i].phrase;
+        } else {
+          it.classList.remove('selected');
+        }
+      });
+    }
+
+    // Search Execution (Queries live backend with seamless fallback)
+    async function performSearch(query) {
+      if (!query) return;
+      latencyBadge.textContent = 'SEARCHING...';
+      const t0 = performance.now();
+
+      // Trigger celebratory burst at search bar
+      const rect = searchWrapper.getBoundingClientRect();
+      for (let i = 0; i < 20; i++) {
+        bursts.push({
+          x: rect.left + rect.width / 2,
+          y: rect.bottom,
+          vx: (Math.random() - 0.5) * 6,
+          vy: Math.random() * 4 + 2,
+          radius: Math.random() * 4 + 2,
+          color: brandColors[i % brandColors.length],
+          alpha: 1,
+          decay: 0.03
+        });
+      }
+
+      try {
+        const res = await fetch(`http://127.0.0.1:8000/api/search?q=${encodeURIComponent(query)}&platform=${currentPlatform}`, { signal: AbortSignal.timeout(600) });
+        if (res.ok) {
+          const data = await res.json();
+          const latency = (performance.now() - t0).toFixed(2);
+          federatedSpeed.textContent = `FEDERATED LATENCY: ${latency}ms`;
+          latencyBadge.textContent = `${latency}ms OK`;
+          renderResults(data.results);
+          return;
+        }
+      } catch (err) {
+        // Fallback filter
+      }
+
+      const latency = (performance.now() - t0).toFixed(2);
+      federatedSpeed.textContent = `FEDERATED LATENCY: ${latency}ms`;
+      latencyBadge.textContent = `${latency}ms OK`;
+
+      // Filter sample data
+      const q = query.toLowerCase();
+      const filtered = sampleData.filter(s => 
+        (currentPlatform === 'all' || s.platform === currentPlatform) &&
+        (s.title.toLowerCase().includes(q) || s.snippet.toLowerCase().includes(q) || q.includes('phone') || q.includes('python'))
+      );
+
+      if (filtered.length > 0) {
+        renderResults(filtered);
+      } else {
+        renderResults([
+          {
+            platform: 'youtube',
+            badge: 'YouTube Video',
+            title: `Deep Dive & Analysis: "${query}"`,
+            snippet: `Curated real-time federated indexing for query "${query}". Synthesizing top video tutorials, architecture discussions, and community posts.`,
+            meta: '▶ Live Synthesis • Instant Trie Match',
+            score: '0.99 Relevancy'
+          }
+        ]);
+      }
+    }
+
+    // Platform Filtering
+    let currentPlatform = 'all';
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentPlatform = btn.dataset.platform;
+        
+        if (searchInput.value.trim()) {
+          performSearch(searchInput.value.trim());
+        } else {
+          if (currentPlatform === 'all') {
+            renderResults(sampleData);
+          } else {
+            renderResults(sampleData.filter(s => s.platform === currentPlatform));
+          }
+        }
+      });
+    });
+
+    // Quick Context Recommendation Pills
+    document.querySelectorAll('.quick-pill').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const query = pill.dataset.query;
+        searchInput.value = query;
+        clearBtn.classList.add('visible');
+        performSearch(query);
+      });
+    });
+  </script>
+</body>
+</html>
