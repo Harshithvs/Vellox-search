@@ -270,7 +270,7 @@ export default function SearchDashboard({
 
     setIsSuggestLoading(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/suggest?q=${encodeURIComponent(prefix.trim())}`);
+      const res = await fetch(`/api/suggest?q=${encodeURIComponent(prefix.trim())}`);
       if (!res.ok) throw new Error('Failed to fetch suggestions');
       const data = await res.json();
 

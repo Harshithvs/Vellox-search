@@ -150,7 +150,7 @@ export default function App() {
   useEffect(() => {
     const fetchContextData = async () => {
       try {
-        const ctxRes = await fetch('http://127.0.0.1:8000/api/context');
+        const ctxRes = await fetch('/api/context');
         if (ctxRes.ok) {
           const ctxData = await ctxRes.json();
           if (ctxData.active_context) {
@@ -158,7 +158,7 @@ export default function App() {
           }
         }
 
-        const recRes = await fetch('http://127.0.0.1:8000/api/recommendations');
+        const recRes = await fetch('/api/recommendations');
         if (recRes.ok) {
           const recData = await recRes.json();
           setContextRecommendations(recData.recommendations || []);
@@ -176,7 +176,7 @@ export default function App() {
   const handleSelectContext = async (platform, topic) => {
     setIsContextLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:8000/api/activity', {
+      const res = await fetch('/api/activity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ platform, topic })
@@ -196,7 +196,7 @@ export default function App() {
   // Clear external context back to neutral
   const handleClearContext = async () => {
     try {
-      await fetch('http://127.0.0.1:8000/api/context', { method: 'DELETE' });
+      await fetch('/api/context', { method: 'DELETE' });
       setActiveContext(null);
       setContextRecommendations([]);
       setQuickPills([]);
@@ -289,7 +289,7 @@ export default function App() {
 
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/search?q=${encodeURIComponent(searchQuery.trim())}&platform=${activePlatform}&page=${nextPage}&page_size=8`
+        `/api/search?q=${encodeURIComponent(searchQuery.trim())}&platform=${activePlatform}&page=${nextPage}&page_size=8`
       );
       if (!res.ok) throw new Error('Failed to load more');
       const data = await res.json();

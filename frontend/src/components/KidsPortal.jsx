@@ -518,7 +518,7 @@ export default function KidsPortal({
   const fetchKidsFeed = useCallback(async (isRefresh = false) => {
     setIsFeedLoading(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/kids/feed?t=${Date.now()}`);
+      const res = await fetch(`/api/kids/feed?t=${Date.now()}`);
       if (res.ok) {
         const data = await res.json();
         setFeedData(data);
@@ -548,7 +548,7 @@ export default function KidsPortal({
     }
 
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/kids/suggest?q=${encodeURIComponent(prefix.trim())}`);
+      const res = await fetch(`/api/kids/suggest?q=${encodeURIComponent(prefix.trim())}`);
       if (res.ok) {
         const data = await res.json();
         const list = data.suggestions || [];
@@ -607,7 +607,7 @@ export default function KidsPortal({
     const t0 = performance.now();
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/kids/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(cat)}&page=1&page_size=12`
+        `/api/kids/search?q=${encodeURIComponent(q)}&category=${encodeURIComponent(cat)}&page=1&page_size=12`
       );
       if (!res.ok) throw new Error('Network error');
       const data = await res.json();
@@ -704,7 +704,7 @@ export default function KidsPortal({
     setIsLoadingMore(true);
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/api/kids/search?q=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(activeCategory)}&page=${nextPage}&page_size=12`
+        `/api/kids/search?q=${encodeURIComponent(searchQuery)}&category=${encodeURIComponent(activeCategory)}&page=${nextPage}&page_size=12`
       );
       if (!res.ok) throw new Error('Network error');
       const data = await res.json();
@@ -748,7 +748,7 @@ export default function KidsPortal({
     const nextPage = feedPage + 1;
     setIsLoadingMoreFeed(true);
     try {
-      const res = await fetch(`http://127.0.0.1:8000/api/kids/feed?page=${nextPage}&category=${encodeURIComponent(activeCategory)}`);
+      const res = await fetch(`/api/kids/feed?page=${nextPage}&category=${encodeURIComponent(activeCategory)}`);
       if (res.ok) {
         const data = await res.json();
         if (data.sections && data.sections.length > 0) {
